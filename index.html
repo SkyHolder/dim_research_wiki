@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dimension Research — Wiki</title>
+<style>
+  :root {
+    --bg: #0e0e14;
+    --bg-card: #1a1a24;
+    --bg-light: #252535;
+    --border: #333344;
+    --accent: #5a6ae0;
+    --accent-hover: #7a8af0;
+    --text: #c0c0d0;
+    --text-dim: #8888a0;
+    --green: #4caf50;
+    --orange: #ff9800;
+    --red: #e53935;
+    --cyan: #00bcd4;
+    --gold: #ffc107;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'Segoe UI',system-ui,sans-serif; line-height:1.6; padding:0; }
+  a { color:var(--accent); text-decoration:none; }
+  a:hover { color:var(--accent-hover); text-decoration:underline; }
+  .container { max-width:1100px; margin:0 auto; padding:24px; }
+  h1 { font-size:2rem; margin-bottom:8px; color:#e0e0f0; }
+  h1 small { font-size:0.5em; color:var(--text-dim); font-weight:400; }
+  h2 { font-size:1.4rem; margin:32px 0 12px; color:var(--accent); border-bottom:1px solid var(--border); padding-bottom:6px; }
+  h3 { font-size:1.1rem; margin:20px 0 8px; color:#d0d0e0; }
+  p { margin:8px 0; }
+  .subtitle { color:var(--text-dim); margin-bottom:24px; font-size:0.95rem; }
+  .toc { background:var(--bg-card); border:1px solid var(--border); border-radius:8px; padding:16px 24px; margin-bottom:32px; }
+  .toc h3 { margin:0 0 8px; color:var(--text); }
+  .toc ul { list-style:none; column-count:2; column-gap:24px; }
+  .toc li { margin:3px 0; }
+  .toc a { font-size:0.9rem; }
+  .card { background:var(--bg-card); border:1px solid var(--border); border-radius:8px; padding:16px 20px; margin:12px 0; }
+  .card h4 { color:var(--accent); margin:0 0 8px; font-size:1rem; }
+  table { width:100%; border-collapse:collapse; margin:12px 0; font-size:0.9rem; }
+  th { background:var(--bg-light); color:var(--text); text-align:left; padding:8px 12px; border:1px solid var(--border); }
+  td { padding:6px 12px; border:1px solid var(--border); vertical-align:top; }
+  tr:nth-child(even) td { background:rgba(255,255,255,0.02); }
+  .tag { display:inline-block; padding:2px 8px; border-radius:4px; font-size:0.8rem; font-weight:600; margin:1px 2px; }
+  .tag-green { background:#2e7d32; color:#fff; }
+  .tag-orange { background:#e65100; color:#fff; }
+  .tag-red { background:#c62828; color:#fff; }
+  .tag-blue { background:#1565c0; color:#fff; }
+  .tag-cyan { background:#00838f; color:#000; }
+  .tag-gold { background:#f57f17; color:#000; }
+  .tag-gray { background:#424242; color:#aaa; }
+  .badge { display:inline-block; padding:1px 6px; border-radius:3px; font-size:0.78rem; }
+  .flow { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:8px 0; }
+  .flow-item { background:var(--bg-light); border:1px solid var(--border); border-radius:6px; padding:6px 12px; font-size:0.85rem; }
+  .flow-arrow { color:var(--text-dim); font-size:1.2rem; }
+  .note { background:var(--bg-light); border-left:3px solid var(--accent); padding:10px 14px; margin:10px 0; border-radius:0 6px 6px 0; font-size:0.9rem; }
+  .note-warn { border-left-color:var(--orange); }
+  .two-col { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media(max-width:700px) { .two-col{grid-template-columns:1fr;} .toc ul{column-count:1;} }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>Dimension Research <small>v0.2a</small></h1>
+<p class="subtitle">Top-down пиксельная игра об учёном, исследующем порталы в другие измерения.<br>Вдохновлена Rimworld, Stargate, Solo Leveling.</p>
+
+<div class="toc">
+  <h3>📑 Содержание</h3>
+  <ul>
+    <li><a href="#core-loop">Игровой цикл</a></li>
+    <li><a href="#portals">Порталы</a></li>
+    <li><a href="#probes">Зонды и исследования</a></li>
+    <li><a href="#resources">Ресурсы</a></li>
+    <li><a href="#research">Древо исследований</a></li>
+    <li><a href="#market">Рынок (Склад)</a></li>
+    <li><a href="#knowledge">Система знаний</a></li>
+    <li><a href="#events">События и лог</a></li>
+    <li><a href="#ui">Интерфейс</a></li>
+    <li><a href="#world">Мир и карта</a></li>
+    <li><a href="#quests">Задания</a></li>
+    <li><a href="#data-flow">Потоки данных</a></li>
+  </ul>
+</div>
+
+<!-- ==================== CORE LOOP ==================== -->
+<h2 id="core-loop">🎮 Игровой цикл</h2>
+<div class="card">
+  <h4>Основная петля (Фаза 1)</h4>
+  <div class="flow">
+    <span class="flow-item">Обнаружить портал</span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-item">Исследовать зондами</span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-item">Получить данные и ресурсы</span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-item">Исследования</span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-item">Новые зонды / измерения</span>
+  </div>
+  <div class="flow" style="margin-top:8px">
+    <span class="flow-item">Получить ресурсы</span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-item">Продать на рынке</span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-item">Кредиты</span>
+    <span class="flow-arrow">→</span>
+    <span class="flow-item">Купить оборудование</span>
+  </div>
+</div>
+<div class="note">Фаза 2 (подземелья и приключенцы) — <strong>не реализована</strong>.</div>
+
+<!-- ==================== PORTALS ==================== -->
+<h2 id="portals">🌀 Порталы</h2>
+
+<h3>Типы измерений</h3>
+<table>
+  <tr><th>Измерение</th><th>Сложность</th><th>Данные (max_data)</th><th>Опасность</th><th>Выживаемость</th><th>Ресурсы (шт)</th></tr>
+  <tr><td>VOID</td><td><span class="tag tag-green">EASY</span></td><td>50</td><td>1/10</td><td>70%</td><td>2–6</td></tr>
+  <tr><td>EARTH</td><td><span class="tag tag-green">EASY</span></td><td>50</td><td>1/10</td><td>90%</td><td>2–6</td></tr>
+  <tr><td>FIRE</td><td><span class="tag tag-orange">MEDIUM</span></td><td>70</td><td>5/10</td><td>60%</td><td>2–5</td></tr>
+  <tr><td>WATER</td><td><span class="tag tag-orange">MEDIUM</span></td><td>70</td><td>4/10</td><td>65%</td><td>2–5</td></tr>
+  <tr><td>AIR</td><td><span class="tag tag-orange">MEDIUM</span></td><td>70</td><td>3/10</td><td>75%</td><td>2–5</td></tr>
+  <tr><td>BIOLOGICAL</td><td><span class="tag tag-orange">MEDIUM</span></td><td>80</td><td>6/10</td><td>55%</td><td>2–4</td></tr>
+  <tr><td>MECHANICAL</td><td><span class="tag tag-orange">MEDIUM</span></td><td>80</td><td>5/10</td><td>60%</td><td>2–4</td></tr>
+  <tr><td>CRYSTAL</td><td><span class="tag tag-red">HARD</span></td><td>100</td><td>7/10</td><td>50%</td><td>1–3</td></tr>
+  <tr><td>CHAOS</td><td><span class="tag tag-red">HARD</span></td><td>120</td><td>9/10</td><td>40%</td><td>1–3</td></tr>
+</table>
+
+<h3>Состояния портала</h3>
+<table>
+  <tr><th>Состояние</th><th>Описание</th><th>Переход</th></tr>
+  <tr><td><span class="badge tag-green">Стабильный</span></td><td>Нормальное состояние, зонды работают</td><td>—</td></tr>
+  <tr><td><span class="badge tag-orange">Нестабильный</span></td><td>Зонды заблокированы</td><td>2% шанс после каждого зондирования</td></tr>
+  <tr><td><span class="badge tag-red">Схлопывание</span></td><td>Критическая нестабильность</td><td>20% шанс при переходе в нестабильный</td></tr>
+  <tr><td><span class="badge tag-gray">Исчерпан</span></td><td>Данные собраны полностью</td><td>data_collected ≥ max_data</td></tr>
+</table>
+
+<h3>Доступность зондов по сложности</h3>
+<div class="note" style="border-left-color:var(--green)"><strong>Все зонды могут входить в любой портал.</strong> Жёстких ограничений нет — вместо них применяются штрафы к данным и ресурсам (см. выше). Частичный провал для палки/базового также увеличивается на сложных порталах.</div>
+
+<h3>Управление порталами</h3>
+<div class="card">
+  <h4>Действия с порталами (исследуются через древо)</h4>
+  <table>
+    <tr><th>Действие</th><th>Исследование</th><th>Стоимость (RP + ресурсы)</th></tr>
+    <tr><td>Стабилизация</td><td>«Стабилизация порталов» (20 RP)</td><td>void_dust×3 + null_crystal×1</td></tr>
+    <tr><td>Закрытие</td><td>«Закрытие портала» (30 RP)</td><td>null_crystal×2 + echo_fragment×2</td></tr>
+    <tr><td>Перемещение</td><td>«Перемещение порталов» (30 RP)</td><td>rusted_gear×2 + ion_dust×2</td></tr>
+    <tr><td>Выбор типа</td><td>«Выбор типа портала» (15 RP)</td><td>void_dust×2 + null_crystal×1</td></tr>
+  </table>
+</div>
+
+<div class="note">Создание портала: через PortalOpener (клик по устройству) или кнопку в BaseModal.<br>Если исследован «Перемещение порталов» — режим выбора места (ghost-превью).<br>Если НЕ исследован — портал спавнится в случайном месте.</div>
+
+<!-- ==================== PROBES ==================== -->
+<h2 id="probes">🔬 Зонды</h2>
+
+<h3>Характеристики зондов</h3>
+<table>
+  <tr><th>Зонд</th><th>Расходуется</th><th>Может быть уничтожен</th><th>Данные</th><th>Ресурсы</th><th>Доступность</th></tr>
+  <tr><td>🪄 Палка</td><td>Нет</td><td>Нет (частичный провал)</td><td>Базовые ×1.0</td><td>Common 10%</td><td>С начала игры</td></tr>
+  <tr><td>📡 Базовый зонд</td><td>Нет</td><td>Нет (частичный провал)</td><td>Базовые ×1.0</td><td>Uncommon 30%</td><td>После «Улучшенные зонды»</td></tr>
+  <tr><td>📻 Продвинутый зонд</td><td>Да (при уничтожении)</td><td>Да</td><td>Повышенные ×1.5</td><td>—</td><td>После «Продвинутые зонды»</td></tr>
+  <tr><td>🤖 Робот</td><td>Да (при уничтожении)</td><td>Да</td><td>—</td><td>Epic 100% (≥1 гарантия)</td><td>После «Робототехника»</td></tr>
+</table>
+
+<div class="note"><strong>Замена:</strong> После исследования «Улучшенные зонды» кнопка «Палка» в модалке портала заменяется на «Базовый зонд» с улучшенными параметрами.<br>
+<strong>Продвинутый зонд и робот</strong> тратятся из инвентаря <em>только при уничтожении</em>. При успешном возвращении остаются.</div>
+
+<h3>Частичный провал (палка / базовый)</h3>
+<table>
+  <tr><th>Зонд</th><th>Базовый шанс провала</th><th>Данные при провале</th><th>Ресурсы при провале</th></tr>
+  <tr><td>Палка</td><td>30%</td><td>×0.3</td><td>×0.3</td></tr>
+  <tr><td>Базовый зонд</td><td>20%</td><td>×0.4</td><td>×0.3</td></tr>
+</table>
+<div class="note">Сложность портала увеличивает шанс провала: MEDIUM +10%, HARD +25% (максимум 80%).<br>
+При провале зонд возвращается, но с минимальным результатом. <code>outcome = PARTIAL</code>.</div>
+
+<h3>Штрафы сложности портала</h3>
+<table>
+  <tr><th>Сложность</th><th>Палка / Базовый</th><th>Продвинутый</th><th>Робот</th></tr>
+  <tr><td><span class="tag tag-green">EASY</span></td><td>Без штрафов</td><td>Без штрафов</td><td>Без штрафов</td></tr>
+  <tr><td><span class="tag tag-orange">MEDIUM</span></td><td>Данные ×0.5, ресурсы ×0.5</td><td>Без штрафов</td><td>Без штрафов</td></tr>
+  <tr><td><span class="tag tag-red">HARD</span></td><td>Данные ×0.2, ресурсы ×0.2</td><td>Данные ×0.5</td><td>Без штрафов</td></tr>
+</table>
+
+<h3>Уничтожение (продвинутый / робот)</h3>
+<table>
+  <tr><th>Зонд</th><th>Шанс выживания</th><th>При уничтожении</th></tr>
+  <tr><td>Продвинутый</td><td>base + 10%</td><td>Тратится из инвентаря, данные/ресурсы = 0</td></tr>
+  <tr><td>Робот</td><td>base + 15%</td><td>Тратится из инвентаря, данные/ресурсы = 0</td></tr>
+</table>
+
+<h3>Зонды на складе</h3>
+<table>
+  <tr><th>Зонд</th><th>Цена покупки</th><th>Начальный запас</th><th>Восстановление</th></tr>
+  <tr><td>Палка</td><td colspan="3">Не продаётся — всегда доступна бесплатно</td></tr>
+  <tr><td>Базовый зонд</td><td colspan="3">Не продаётся — заменяет палку после исследования</td></tr>
+  <tr><td>Продвинутый зонд</td><td>75¢</td><td>10</td><td>+1 / 60с</td></tr>
+  <tr><td>Робот</td><td>180¢</td><td>5</td><td>+1 / 60с</td></tr>
+</table>
+<div class="note">Палка и базовый зонд не расходуются — их не нужно покупать или хранить в инвентаре.<br>
+Продвинутый зонд и робот расходуются <strong>только при уничтожении</strong> внутри портала.</div>
+
+<!-- ==================== RESOURCES ==================== -->
+<h2 id="resources">💎 Ресурсы</h2>
+
+<h3>Ресурсы по измерениям</h3>
+<table>
+  <tr><th>Измерение</th><th>Ресурс</th><th>Редкость</th><th>Покупка</th><th>Продажа</th></tr>
+  <tr><td rowspan="3">VOID</td><td>Пыль пустоты</td><td><span class="tag tag-gray">Common</span></td><td>8¢</td><td>5¢</td></tr>
+  <tr><td>Нуль-кристалл</td><td><span class="tag tag-green">Uncommon</span></td><td>35¢</td><td>25¢</td></tr>
+  <tr><td>Фрагмент эха</td><td><span class="tag tag-blue">Rare</span></td><td>60¢</td><td>45¢</td></tr>
+  <tr><td rowspan="3">EARTH</td><td>Кристальная глина</td><td><span class="tag tag-gray">Common</span></td><td>8¢</td><td>5¢</td></tr>
+  <tr><td>Железный корень</td><td><span class="tag tag-green">Uncommon</span></td><td>12¢</td><td>8¢</td></tr>
+  <tr><td>Плотная руда</td><td><span class="tag tag-blue">Rare</span></td><td>25¢</td><td>18¢</td></tr>
+  <tr><td rowspan="3">FIRE</td><td>Угольный камень</td><td><span class="tag tag-gray">Common</span></td><td>8¢</td><td>5¢</td></tr>
+  <tr><td>Термоядро</td><td><span class="tag tag-green">Uncommon</span></td><td>15¢</td><td>10¢</td></tr>
+  <tr><td>Магмовый кристалл</td><td><span class="tag tag-blue">Rare</span></td><td>40¢</td><td>28¢</td></tr>
+  <tr><td rowspan="3">WATER</td><td>Глубинная соль</td><td><span class="tag tag-gray">Common</span></td><td>8¢</td><td>5¢</td></tr>
+  <tr><td>Аква-гель</td><td><span class="tag tag-green">Uncommon</span></td><td>18¢</td><td>12¢</td></tr>
+  <tr><td>Жемчужина давления</td><td><span class="tag tag-blue">Rare</span></td><td>45¢</td><td>32¢</td></tr>
+  <tr><td rowspan="3">AIR</td><td>Сконденсированный газ</td><td><span class="tag tag-gray">Common</span></td><td>8¢</td><td>5¢</td></tr>
+  <tr><td>Ионная пыль</td><td><span class="tag tag-green">Uncommon</span></td><td>15¢</td><td>10¢</td></tr>
+  <tr><td>Небесное ядро</td><td><span class="tag tag-blue">Rare</span></td><td>50¢</td><td>38¢</td></tr>
+  <tr><td rowspan="3">BIOLOGICAL</td><td>Биомасса</td><td><span class="tag tag-gray">Common</span></td><td>8¢</td><td>5¢</td></tr>
+  <tr><td>Органический образец</td><td><span class="tag tag-green">Uncommon</span></td><td>25¢</td><td>18¢</td></tr>
+  <tr><td>Живая ткань</td><td><span class="tag tag-blue">Rare</span></td><td>55¢</td><td>40¢</td></tr>
+  <tr><td rowspan="3">MECHANICAL</td><td>Ржавая шестерня</td><td><span class="tag tag-gray">Common</span></td><td>8¢</td><td>5¢</td></tr>
+  <tr><td>Инопланетный металл</td><td><span class="tag tag-green">Uncommon</span></td><td>15¢</td><td>10¢</td></tr>
+  <tr><td>Древний компонент</td><td><span class="tag tag-blue">Rare</span></td><td>60¢</td><td>45¢</td></tr>
+  <tr><td rowspan="2">CRYSTAL</td><td>Кристалл</td><td><span class="tag tag-blue">Rare</span></td><td>35¢</td><td>25¢</td></tr>
+  <tr><td>Логический фрагмент</td><td><span class="tag tag-blue">Rare</span></td><td>70¢</td><td>50¢</td></tr>
+  <tr><td>CHAOS</td><td>Образец мутагена</td><td><span class="tag tag-blue">Rare</span></td><td>80¢</td><td>60¢</td></tr>
+</table>
+
+<h3>Ресурсы по зондам (что выпадает)</h3>
+<div class="card">
+  <h4>Фильтрация при генерации лута</h4>
+  <p>Ресурс выпадает с портала если:</p>
+  <ul style="margin:8px 0 8px 20px">
+    <li><code>item.dimension_type == portal.dimension_type</code> — ресурс привязан к этому измерению</li>
+    <li><code>item.dimension_type == -1 (ANY)</code> — универсальный ресурс (пока таких нет)</li>
+    <li><code>item.rarity ≤ probe.max_rarity</code> — редкость не выше максимума зонда</li>
+  </ul>
+  <p>Если ни один ресурс не подходит — fallback: все ресурсы с rarity ≤ max_rarity (без фильтра по измерению).</p>
+</div>
+
+<!-- ==================== RESEARCH ==================== -->
+<h2 id="research">🔬 Древо исследований</h2>
+
+<h3>CORE (База)</h3>
+<table>
+  <tr><th>Исследование</th><th>RP</th><th>Зависимости</th><th>Ресурсы</th><th>Эффект</th></tr>
+  <tr><td>Базовый анализ</td><td>5</td><td>—</td><td>—</td><td>Разблокирует цепочку добычи и исследований</td></tr>
+  <tr><td>Эффективная добыча</td><td>15</td><td>Базовый анализ</td><td>void_dust×2</td><td>+30% к добыче ресурсов</td></tr>
+  <tr><td>Продвинутая добыча</td><td>30</td><td>Эффективная добыча</td><td>thermal_core×1 + pressure_pearl×1</td><td>+50% к добыче, анализатор</td></tr>
+  <tr><td>Эффективный рынок</td><td>10</td><td>Базовый анализ</td><td>—</td><td>+20% к ценам продажи</td></tr>
+  <tr><td>Инвентарь I</td><td>10</td><td>Базовый анализ</td><td>void_dust×1</td><td>30 слотов</td></tr>
+  <tr><td>Инвентарь II</td><td>20</td><td>Инвентарь I</td><td>deep_salt×2 + ember_stone×2</td><td>40 слотов</td></tr>
+  <tr><td>Инвентарь III</td><td>35</td><td>Инвентарь II</td><td>dense_ore×3 + thermal_core×2</td><td>60 слотов</td></tr>
+  <tr><td>Void инвентарь</td><td>50</td><td>Инвентарь III</td><td>null_crystal×2 + echo_fragment×2</td><td>Бесконечное хранилище</td></tr>
+  <tr style="background:rgba(90,106,224,0.1)"><td>🔹 Расширение порталов</td><td>15</td><td>Базовый анализ</td><td>void_dust×3</td><td>Максимум порталов +10</td></tr>
+</table>
+
+<h3>PROBES (Зонды)</h3>
+<table>
+  <tr><th>Исследование</th><th>RP</th><th>Зависимости</th><th>Ресурсы</th><th>Разблокирует</th></tr>
+  <tr><td>Улучшенные зонды</td><td>10</td><td>Базовый анализ</td><td>void_dust×2</td><td>Палка → Базовый зонд (улучшенные параметры)</td></tr>
+  <tr><td>Продвинутые зонды</td><td>20</td><td>Улучшенные зонды</td><td>null_crystal×2 + iron_root×2</td><td>Продвинутый зонд (данные, расходуется)</td></tr>
+  <tr><td>Робототехника</td><td>25</td><td>Продвинутые зонды</td><td>iron_root×3 + crystal_clay×3</td><td>Робот (ресурсы, расходуется)</td></tr>
+  <tr><td>Прочный щуп</td><td>8</td><td>Базовый анализ</td><td>—</td><td>+20% данных от базового зонда</td></tr>
+  <tr><td>Эффективность зондов</td><td>15</td><td>Улучшенные зонды</td><td>ember_stone×1 + deep_salt×1</td><td>+30% данных, +10% выживаемость</td></tr>
+  <tr><td>Калибровка инструментов</td><td>10</td><td>Базовый анализ</td><td>—</td><td>+20% стабильность зондов</td></tr>
+</table>
+
+<h3>DIMENSIONS (Измерения)</h3>
+<table>
+  <tr><th>Исследование</th><th>RP</th><th>Зависимости</th><th>Ресурсы</th><th>Разблокирует</th></tr>
+  <tr><td>VOID: Шёпот пустоты</td><td>15</td><td>Базовый анализ</td><td>void_dust×2</td><td>VOID порталы</td></tr>
+  <tr><td>EARTH: Недра</td><td>15</td><td>VOID</td><td>void_dust×3 + null_crystal×1</td><td>EARTH порталы</td></tr>
+  <tr><td>🔹 Перемещение порталов</td><td>30</td><td>EARTH</td><td>iron_root×2 + crystal_clay×2</td><td>Ghost-превью при спавне/перемещении</td></tr>
+  <tr><td>AIR: Небеса</td><td>20</td><td>EARTH</td><td>iron_root×2 + void_dust×2</td><td>AIR порталы</td></tr>
+  <tr><td>🔹 Выбор типа портала</td><td>15</td><td>AIR</td><td>void_dust×2 + null_crystal×1</td><td>Кнопки конкретных типов в BaseModal</td></tr>
+  <tr><td>WATER: Глубины</td><td>25</td><td>AIR</td><td>condensed_gas×2 + null_crystal×1</td><td>WATER порталы</td></tr>
+  <tr><td>🔹 Стабилизация порталов</td><td>20</td><td>WATER</td><td>void_dust×3 + null_crystal×1</td><td>Кнопка стабилизации</td></tr>
+  <tr><td>FIRE: Языки пламени</td><td>25</td><td>WATER</td><td>deep_salt×2 + crystal_clay×2</td><td>FIRE порталы</td></tr>
+  <tr><td>BIOLOGICAL: Живая материя</td><td>30</td><td>FIRE</td><td>aqua_gel×2 + ember_stone×1</td><td>BIO порталы</td></tr>
+  <tr><td>MECHANICAL: Древние механизмы</td><td>35</td><td>BIOLOGICAL</td><td>dense_ore×2 + ion_dust×1</td><td>MECH порталы</td></tr>
+  <tr><td>🔹 Закрытие портала</td><td>30</td><td>MECHANICAL</td><td>rusted_gear×2 + ancient_component×1</td><td>Кнопка закрытия</td></tr>
+  <tr><td>CRYSTAL: Кристальная решётка</td><td>40</td><td>MECHANICAL</td><td>living_tissue×1 + ancient_component×1 + sky_core×1</td><td>CRYSTAL порталы</td></tr>
+  <tr><td>CHAOS: Вихрь энтропии</td><td>50</td><td>CRYSTAL</td><td>magma_crystal×2 + mutagen_sample×2 + logic_fragment×1</td><td>CHAOS порталы</td></tr>
+</table>
+
+<!-- ==================== MARKET ==================== -->
+<h2 id="market">🏪 Рынок (Склад)</h2>
+
+<h3>Механика цен</h3>
+<div class="card">
+  <h4>Динамическое ценообразование</h4>
+  <table>
+    <tr><th>Действие</th><th>Эффект на цену</th><th>Модификатор</th></tr>
+    <tr><td>Покупка (спрос ↑)</td><td>Цена растёт</td><td>+0.015 за ед.</td></tr>
+    <tr><td>Продажа (предложение ↑)</td><td>Цена падает</td><td>−0.015 за ед.</td></tr>
+    <tr><td>Восстановление</td><td>Цена → 1.0</td><td>−0.01 / 30с</td></tr>
+  </table>
+  <p>Модификатор в пределах <span class="badge tag-green">0.7×</span> – <span class="badge tag-red">1.3×</span> от базовой цены.</p>
+  <p>Бонус «Эффективный рынок»: цены продажи ×1.2</p>
+</div>
+
+<h3>Запасы на рынке</h3>
+<div class="card">
+  <h4>Оборудование</h4>
+  <ul style="margin:4px 0 4px 20px">
+    <li>Стартовый запас появляется <strong>при разблокировке</strong> через исследования</li>
+    <li>Восстановление: +1 ед. каждые 60с (до максимума)</li>
+    <li>Не разблокированное оборудование — запас = 0, не отображается</li>
+  </ul>
+  <h4>Ресурсы</h4>
+  <ul style="margin:4px 0 4px 20px">
+    <li>Стартовый запас = 0</li>
+    <li>Появляются только через продажу игроком</li>
+    <li>Не восстанавливаются</li>
+  </ul>
+</div>
+
+<!-- ==================== KNOWLEDGE ==================== -->
+<h2 id="knowledge">🧠 Система знаний</h2>
+
+<h3>Уровень знания портала</h3>
+<table>
+  <tr><th>Уровень</th><th>Как получить</th><th>Что открывает</th></tr>
+  <tr><td><span class="badge tag-gray">UNKNOWN</span></td><td>Начальное состояние</td><td>Только номер: PORTAL-1</td></tr>
+  <tr><td><span class="badge tag-blue">BASIC</span></td><td>Любой успешный зонд</td><td>Тип измерения, стабильность, описание</td></tr>
+  <tr><td><span class="badge tag-cyan">ANALYZED</span></td><td>Базовый / продвинутый зонд</td><td>+ Опасность, + Секция ресурсов в модалке</td></tr>
+  <tr><td><span class="badge tag-gold">MASTERED</span></td><td>Робот</td><td>+ Объём ресурсов (min–max)</td></tr>
+</table>
+
+<h3>Уровень знания измерения</h3>
+<p>Глобальный прогресс по каждому типу измерения (не по порталу):</p>
+<table>
+  <tr><th>Стадия</th><th>Эффект</th></tr>
+  <tr><td>BASIC</td><td>Начальная стадия</td></tr>
+  <tr><td>ANALYZED</td><td>Улучшенный сбор данных</td></tr>
+  <tr><td>MASTERED</td><td>Максимальная стадия, +20% шанс ресурса</td></tr>
+</table>
+
+<h3>Что видно в модальном окне портала</h3>
+<table>
+  <tr><th>Параметр</th><th>UNKNOWN</th><th>BASIC</th><th>ANALYZED</th><th>MASTERED</th></tr>
+  <tr><td>Номер (PORTAL-N)</td><td>✅</td><td>✅</td><td>✅</td><td>✅</td></tr>
+  <tr><td>Тип измерения</td><td>❌</td><td>✅</td><td>✅</td><td>✅</td></tr>
+  <tr><td>Сложность (звёзды)</td><td>❌</td><td>✅</td><td>✅</td><td>✅</td></tr>
+  <tr><td>Стабильность %</td><td>❌</td><td>✅</td><td>✅</td><td>✅</td></tr>
+  <tr><td>Опасность</td><td>❌</td><td>❌</td><td>✅</td><td>✅</td></tr>
+  <tr><td>Объём ресурсов</td><td>❌</td><td>❌</td><td>❌</td><td>✅</td></tr>
+  <tr><td>Секция «Ресурсы» (дроп-таблица)</td><td>❌</td><td>✅</td><td>✅</td><td>✅</td></tr>
+  <tr><td>Описание (заметка)</td><td>❌</td><td>✅ (placeholder)</td><td>✅</td><td>✅</td></tr>
+</table>
+
+<!-- ==================== EVENTS ==================== -->
+<h2 id="events">📜 События и лог</h2>
+
+<div class="card">
+  <h4>EventLog (autoload)</h4>
+  <p>Все игровые события собираются в единый лог. Новые записи — в начале списка (index 0). Макс. 200 записей.</p>
+  <ul style="margin:4px 0 4px 20px">
+    <li><strong>show_notification</strong> — любые уведомления (без коллбэка)</li>
+    <li><strong>portal_spawned</strong> — создание портала (клик → фокус + открытие панели)</li>
+    <li><strong>portal_became_unstable</strong> — нестабильность (клик → фокус + открытие панели)</li>
+  </ul>
+</div>
+
+<div class="two-col">
+  <div class="card">
+    <h4>MessageFeed (виджет)</h4>
+    <p>Левый нижний угол, 15px от краёв.</p>
+    <ul style="margin:4px 0 4px 20px">
+      <li>5 последних записей</li>
+      <li>15с — яркие, затем тусклые</li>
+      <li>Фон: 10% → 50% при hover</li>
+      <li>Hover — все 5 яркие</li>
+      <li>Клик → EventLogModal</li>
+      <li>Пустой — скрыт</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h4>EventLogModal</h4>
+    <p>Полный журнал событий.</p>
+    <ul style="margin:4px 0 4px 20px">
+      <li>Новые записи сверху</li>
+      <li>День + текст</li>
+      <li>Портальные события — кликабельны</li>
+      <li>Hover на кликабельной записи — подсветка фона</li>
+      <li>Кнопка «Очистить»</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ==================== UI ==================== -->
+<h2 id="ui">🖥 Интерфейс</h2>
+
+<h3>Topbar</h3>
+<table>
+  <tr><th>Элемент</th><th>Описание</th></tr>
+  <tr><td>🪙 Кредиты</td><td>Текущий баланс, иконка coins</td></tr>
+  <tr><td>🧪 RP</td><td>Research Points, иконка flask-conical</td></tr>
+  <tr><td>Задания</td><td>Открывает QuestModal</td></tr>
+  <tr><td>Склад</td><td>Открывает ShopModal (клавиша I)</td></tr>
+  <tr><td>Иссл.</td><td>Открывает ResearchModal (клавиша T)</td></tr>
+  <tr><td>Лог</td><td>Открывает EventLogModal</td></tr>
+  <tr><td>Журнал</td><td>Открывает JournalModal (клавиша Q)</td></tr>
+  <tr><td>База</td><td>Открывает BaseModal</td></tr>
+  <tr><td>🛠</td><td>Debug-меню (F12)</td></tr>
+</table>
+
+<h3>Модальные окна</h3>
+<table>
+  <tr><th>Окно</th><th>Источник</th><th>Содержимое</th></tr>
+  <tr><td>PortalModal</td><td>Клик по порталу</td><td>Две колонки: инфо+заметки | данные+зонды+действия</td></tr>
+  <tr><td>ShopModal (Склад)</td><td>Клавиша I / topbar</td><td>Таблица: Товар | Купить | На складе | Продать | На рынке</td></tr>
+  <tr><td>ResearchModal</td><td>Клавиша T / topbar</td><td>Древо исследований</td></tr>
+  <tr><td>BaseModal</td><td>Клик по PortalOpener / topbar</td><td>Список порталов + спавн + статистика</td></tr>
+  <tr><td>QuestModal</td><td>Topbar</td><td>Список заданий с прогрессом</td></tr>
+  <tr><td>JournalModal</td><td>Клавиша Q / topbar</td><td>Фрагменты знаний</td></tr>
+  <tr><td>EventLogModal</td><td>Клик по MessageFeed / topbar</td><td>Полный лог событий</td></tr>
+  <tr><td>DebugModal</td><td>F12</td><td>Бесконечные ресурсы, спавн порталов</td></tr>
+</table>
+
+<h3>Клавиши</h3>
+<table>
+  <tr><th>Клавиша</th><th>Действие</th></tr>
+  <tr><td>WASD</td><td>Панорамирование камеры</td></tr>
+  <tr><td>Колёсико мыши</td><td>Зум</td></tr>
+  <tr><td>Средняя кнопка мыши</td><td>Перетаскивание камеры</td></tr>
+  <tr><td>I</td><td>Склад</td></tr>
+  <tr><td>T</td><td>Исследования</td></tr>
+  <tr><td>Q</td><td>Журнал</td></tr>
+  <tr><td>F12</td><td>Debug-меню</td></tr>
+  <tr><td>ESC</td><td>Закрыть текущее окно</td></tr>
+</table>
+
+<!-- ==================== WORLD ==================== -->
+<h2 id="world">🗺 Мир и карта</h2>
+<div class="card">
+  <h4>Генерация мира</h4>
+  <ul style="margin:4px 0 4px 20px">
+    <li>Размер: 100×100 тайлов</li>
+    <li>Landscape: Perlin noise → трава / dirt / песок / камень</li>
+    <li>Декорации: кусты, деревья (второй слой шума)</li>
+    <li>Конфиг сохраняется в <code>user://terrain_config.json</code></li>
+    <li>NPC: 50 шт., Wander AI</li>
+    <li>Макс. порталов: 10</li>
+  </ul>
+</div>
+
+<!-- ==================== QUESTS ==================== -->
+<h2 id="quests">📋 Задания</h2>
+<table>
+  <tr><th>Задание</th><th>Тип</th><th>Цель</th><th>Награда</th></tr>
+  <tr><td>Огненная утилизация</td><td>Сбор ресурсов</td><td>ember_stone ×5</td><td>—</td></tr>
+  <tr><td>Исследователь</td><td>Зонды</td><td>Уникальных порталов ×3</td><td>—</td></tr>
+  <tr><td>Кристальный сбор</td><td>Сбор ресурсов</td><td>crystal_clay ×5</td><td>—</td></tr>
+  <tr><td>Водосбор</td><td>Сбор ресурсов</td><td>aqua_gel ×1000</td><td>—</td></tr>
+  <tr><td>Прорыв</td><td>Исследования</td><td>100 RP</td><td>—</td></tr>
+</table>
+
+<!-- ==================== DATA FLOW ==================== -->
+<h2 id="data-flow">🔄 Потоки данных</h2>
+
+<h3>Зондирование портала — поток</h3>
+<div class="flow">
+  <span class="flow-item">Клик «Зонд»</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-item">PortalModal._send_probe()</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-item">InteractionSystem._probe_portal()</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-item" style="border-color:var(--green)">✓ Проверка сложности</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-item" style="border-color:var(--green)">✓ Проверка выживаемости</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-item">Расчёт данных</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-item">Генерация ресурсов</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-item">Обновление knowledge_level</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-item">Проверка нестабильности</span>
+</div>
+
+<h3>Разблокировка зонда — поток</h3>
+<div class="flow">
+  <span class="flow-item">ResearchManager.research_node()</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-item">Проверка RP + ресурсы</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-item">Списание</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-item">node.researched = true</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-item">unlocks_items → MarketManager.on_equipment_unlocked()</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-item">Заполнение stock до cap</span>
+</div>
+
+<h3>События — поток</h3>
+<div class="flow">
+  <span class="flow-item">EventBus.emit("show_notification")</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-item">EventLog._insert()</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-item">entry_added.emit()</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-item">MessageFeed._refresh_from_log()</span>
+</div>
+<div class="flow" style="margin-top:4px">
+  <span class="flow-item">EventBus.emit("portal_spawned")</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-item">EventLog._on_portal_spawned()</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-item">add_portal_entry() + callback</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-item">entry_added.emit()</span>
+  <span class="flow-arrow">→</span>
+  <span class="flow-item">MessageFeed обновляется</span>
+</div>
+
+<h3>Autoloads (синглтоны)</h3>
+<table>
+  <tr><th>Autoload</th><th>Группа</th><th>Ответственность</th></tr>
+  <tr><td>EventBus</td><td>event_bus</td><td>Глобальная шина сигналов</td></tr>
+  <tr><td>GameManager</td><td>—</td><td>Кредиты, RP, фаза игры</td></tr>
+  <tr><td>DataRegistry</td><td>—</td><td>Реестр .tres ресурсов/порталов/зданий</td></tr>
+  <tr><td>ResearchManager</td><td>—</td><td>Древо исследований, разблокировки</td></tr>
+  <tr><td>MarketManager</td><td>—</td><td>Цены, запасы, покупка/продажа</td></tr>
+  <tr><td>QuestManager</td><td>—</td><td>Система заданий</td></tr>
+  <tr><td>DebugLogger</td><td>—</td><td>Отладочное логирование</td></tr>
+  <tr><td>EventLog</td><td>event_log</td><td>Журнал событий с коллбэками</td></tr>
+  <tr><td>JournalManager</td><td>—</td><td>Фрагменты знаний</td></tr>
+</table>
+
+<footer style="margin-top:40px; padding-top:16px; border-top:1px solid var(--border); color:var(--text-dim); font-size:0.85rem;">
+  Dimension Research Wiki — обновлено 2026-05-29 | Движок: Godot 4.6 | GDScript 2.0
+</footer>
+
+</div>
+</body>
+</html>
