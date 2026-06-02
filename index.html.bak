@@ -75,7 +75,6 @@
     <li><a href="#resources">Ресурсы</a></li>
     <li><a href="#research">Древо исследований</a></li>
     <li><a href="#market">Рынок (Склад)</a></li>
-    <li><a href="#void-storage">Void-хранилище</a></li>
     <li><a href="#knowledge">Система знаний</a></li>
     <li><a href="#events">События и лог</a></li>
     <li><a href="#ui">Интерфейс</a></li>
@@ -146,30 +145,14 @@
   <h4>Действия с порталами (исследуются через древо)</h4>
   <table>
     <tr><th>Действие</th><th>Исследование</th><th>Стоимость (RP + ресурсы)</th></tr>
-    <tr><td>Стабилизация</td><td>«Стабилизация порталов» (20 RP)</td><td>2× Пыль пустоты + 1× Базовый ресурс измерения</td></tr>
-    <tr><td>Закрытие</td><td>«Закрытие портала» (30 RP)</td><td>8× Пыль пустоты + 4× Базовый ресурс измерения</td></tr>
-    <tr><td>Перемещение</td><td>«Перемещение порталов» (30 RP)</td><td>4× Пыль пустоты + 2× Базовый ресурс измерения</td></tr>
+    <tr><td>Стабилизация</td><td>«Стабилизация порталов» (20 RP)</td><td>void_dust×3 + null_crystal×1</td></tr>
+    <tr><td>Закрытие</td><td>«Закрытие портала» (30 RP)</td><td>null_crystal×2 + echo_fragment×2</td></tr>
+    <tr><td>Перемещение</td><td>«Перемещение порталов» (30 RP)</td><td>rusted_gear×2 + ion_dust×2</td></tr>
     <tr><td>Выбор типа</td><td>«Выбор типа портала» (15 RP)</td><td>void_dust×2 + null_crystal×1</td></tr>
   </table>
 </div>
 
 <div class="note">Создание портала: через PortalOpener (клик по устройству) или кнопку в BaseModal.<br>Если исследован «Перемещение порталов» — режим выбора места (ghost-превью).<br>Если НЕ исследован — портал спавнится в случайном месте.</div>
-
-<h3>Базовые ресурсы по измерениям</h3>
-<table>
-  <tr><th>Измерение</th><th>Базовый ресурс (Common)</th></tr>
-  <tr><td>VOID (Пустота)</td><td>Пыль пустоты (void_dust)</td></tr>
-  <tr><td>FIRE (Огонь)</td><td>Углевой камень (ember_stone)</td></tr>
-  <tr><td>WATER (Вода)</td><td>Глубинная соль (deep_salt)</td></tr>
-  <tr><td>EARTH (Земля)</td><td>Кристаллическая глина (crystal_clay)</td></tr>
-  <tr><td>AIR (Воздух)</td><td>Конденсированный газ (condensed_gas)</td></tr>
-  <tr><td>CRYSTAL (Кристалл)</td><td>Кристалл (resource_crystal)</td></tr>
-  <tr><td>BIOLOGICAL (Био)</td><td>Биомасса (biomass)</td></tr>
-  <tr><td>MECHANICAL (Механика)</td><td>Ржавая шестерня (rusted_gear)</td></tr>
-  <tr><td>CHAOS (Хаос)</td><td>Пыль пустоты (void_dust)</td></tr>
-</table>
-
-<div class="note">Стоимость действий с порталами зависит от типа измерения — каждый портал требует свою пыль пустоты + базовый ресурс этого измерения.</div>
 
 <!-- ==================== PROBES ==================== -->
 <h2 id="probes">🔬 Зонды</h2>
@@ -294,10 +277,10 @@
   <tr><td>Эффективная добыча</td><td>15</td><td>Базовый анализ</td><td>void_dust×2</td><td>+30% к добыче ресурсов</td></tr>
   <tr><td>Продвинутая добыча</td><td>30</td><td>Эффективная добыча</td><td>thermal_core×1 + pressure_pearl×1</td><td>+50% к добыче, анализатор</td></tr>
   <tr><td>Эффективный рынок</td><td>10</td><td>Базовый анализ</td><td>—</td><td>+20% к ценам продажи</td></tr>
-  <tr><td>Склад I</td><td>10</td><td>Базовый анализ</td><td>void_dust×1</td><td>25 мест</td></tr>
-  <tr><td>Склад II</td><td>20</td><td>Склад I</td><td>deep_salt×2 + ember_stone×2</td><td>30 мест</td></tr>
-  <tr><td>Склад III</td><td>35</td><td>Склад II</td><td>dense_ore×3 + thermal_core×2</td><td>35 мест</td></tr>
-  <tr><td>Void-хранилище</td><td>50</td><td>Склад III</td><td>null_crystal×2 + echo_fragment×2</td><td>VOID портал → отдельный склад</td></tr>
+  <tr><td>Инвентарь I</td><td>10</td><td>Базовый анализ</td><td>void_dust×1</td><td>30 слотов</td></tr>
+  <tr><td>Инвентарь II</td><td>20</td><td>Инвентарь I</td><td>deep_salt×2 + ember_stone×2</td><td>40 слотов</td></tr>
+  <tr><td>Инвентарь III</td><td>35</td><td>Инвентарь II</td><td>dense_ore×3 + thermal_core×2</td><td>60 слотов</td></tr>
+  <tr><td>Void инвентарь</td><td>50</td><td>Инвентарь III</td><td>null_crystal×2 + echo_fragment×2</td><td>Бесконечное хранилище</td></tr>
   <tr style="background:rgba(90,106,224,0.1)"><td>🔹 Расширение порталов</td><td>15</td><td>Базовый анализ</td><td>void_dust×3</td><td>Максимум порталов +10</td></tr>
 </table>
 
@@ -360,28 +343,6 @@
     <li>Появляются только через продажу игроком</li>
     <li>Не восстанавливаются</li>
   </ul>
-</div>
-
-<!-- ==================== VOID STORAGE ==================== -->
-<h2 id="void-storage">🌀 Void-хранилище</h2>
-
-<div class="card">
-  <h4>Портал-хранилище</h4>
-  <p>После исследования <strong>Void-хранилище</strong> (50 RP, Склад III), стабильный VOID портал можно превратить в отдельное хранилище.</p>
-  <ul style="margin:4px 0 4px 20px">
-    <li>Вместимость = текущая вместимость основного склада</li>
-    <li>Портал теряет возможность зондирования</li>
-    <li>Стаки и механика те же, что на основном складе (50 ед./стак)</li>
-  </ul>
-  <h4>Риски</h4>
-  <table>
-    <tr><th>Событие</th><th>Эффект</th></tr>
-    <tr><td>Портал нестабилен</td><td>⚠ Ресурсы недоступны (нельзя добавить/убрать)</td></tr>
-    <tr><td>Стабилизация (30%)</td><td>💀 Полная потеря всех ресурсов</td></tr>
-    <tr><td>Стабилизация (30%)</td><td>⚠ Частичная потеря 30–70% каждого стака</td></tr>
-    <tr><td>Стабилизация (40%)</td><td>✅ Ресурсы в сохранности</td></tr>
-    <tr><td>Закрытие портала</td><td>💀 Все ресурсы уничтожаются</td></tr>
-  </table>
 </div>
 
 <!-- ==================== KNOWLEDGE ==================== -->
@@ -559,7 +520,7 @@
   <span class="flow-arrow">→</span>
   <span class="flow-item">node.researched = true</span>
   <span class="flow-arrow">→</span>
-  <span class="flow-item">unlocks_items → StorageManager.on_equipment_unlocked()</span>
+  <span class="flow-item">unlocks_items → MarketManager.on_equipment_unlocked()</span>
   <span class="flow-arrow">→</span>
   <span class="flow-item">Заполнение stock до cap</span>
 </div>
@@ -593,7 +554,7 @@
   <tr><td>GameManager</td><td>—</td><td>Кредиты, RP, фаза игры</td></tr>
   <tr><td>DataRegistry</td><td>—</td><td>Реестр .tres ресурсов/порталов/зданий</td></tr>
   <tr><td>ResearchManager</td><td>—</td><td>Древо исследований, разблокировки</td></tr>
-  <tr><td>StorageManager</td><td>—</td><td>Склад: цены, запасы, покупка/продажа</td></tr>
+  <tr><td>MarketManager</td><td>—</td><td>Цены, запасы, покупка/продажа</td></tr>
   <tr><td>QuestManager</td><td>—</td><td>Система заданий</td></tr>
   <tr><td>DebugLogger</td><td>—</td><td>Отладочное логирование</td></tr>
   <tr><td>EventLog</td><td>event_log</td><td>Журнал событий с коллбэками</td></tr>
@@ -601,7 +562,7 @@
 </table>
 
 <footer style="margin-top:40px; padding-top:16px; border-top:1px solid var(--border); color:var(--text-dim); font-size:0.85rem;">
-  Dimension Research Wiki — обновлено 2026-06-02 | Движок: Godot 4.6 | GDScript 2.0
+  Dimension Research Wiki — обновлено 2026-05-29 | Движок: Godot 4.6 | GDScript 2.0
 </footer>
 
 </div>
