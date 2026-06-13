@@ -63,7 +63,7 @@
 <body>
 <div class="container">
 
-<h1>Dimension Research <small>v0.2a</small></h1>
+<h1>Dimension Research <small>v0.3</small></h1>
 <p class="subtitle">Top-down пиксельная игра об учёном, исследующем порталы в другие измерения.<br>Вдохновлена Rimworld, Stargate, Solo Leveling.</p>
 
 <div class="toc">
@@ -81,6 +81,7 @@
     <li><a href="#ui">Интерфейс</a></li>
     <li><a href="#world">Мир и карта</a></li>
     <li><a href="#quests">Задания</a></li>
+    <li><a href="#combat">Боевая система</a></li>
     <li><a href="#data-flow">Потоки данных</a></li>
   </ul>
 </div>
@@ -224,8 +225,9 @@
   <tr><td><span class="tag tag-orange">MEDIUM</span></td><td>×1.5</td></tr>
   <tr><td><span class="tag tag-red">HARD</span></td><td>×2.0</td></tr>
 </table>
-<div class="note">Формула: <code>кулдаун = 5с × множитель_сложности × множитель_зонда</code><br>
+<div class="note">Формула: <code>кулдаун = 5с × множитель_сложности × множитель_зонда × исследования_скорости</code><br>
 Примеры: палка EASY = 7.5с, базовый EASY = 5с, продвинутый MEDIUM = 6с, робот HARD = 20с.<br>
+Исследования скорости: Быстрая подготовка (×0.8), Оптимизация портала (×0.8 EASY/MEDIUM), Глубокая калибровка (×0.75 HARD), Оптимизация зондов (×0.85), Ускоренная калибровка (×0.70).<br>
 Во время кулдауна портал занят — нельзя отправить другой зонд, переместить или закрыть.<br>
 Результат показывается 5 секунд, затем строка состояния сбрасывается.</div>
 
@@ -310,8 +312,18 @@
   <tr><td>Прочный щуп</td><td>8</td><td>Базовый анализ</td><td>—</td><td>+20% данных от базового зонда</td></tr>
   <tr><td>Эффективность зондов</td><td>15</td><td>Улучшенные зонды</td><td>ember_stone×1 + deep_salt×1</td><td>+30% данных, +10% выживаемость</td></tr>
   <tr><td>Калибровка инструментов</td><td>10</td><td>Базовый анализ</td><td>—</td><td>+20% стабильность зондов</td></tr>
-  <tr><td>🔹 Оптимизация зондов</td><td>15</td><td>Улучшенные зонды</td><td>—</td><td>Время исследования ×0.85</td></tr>
-  <tr><td>🔹 Ускоренная калибровка</td><td>25</td><td>Оптимизация зондов</td><td>—</td><td>Время исследования ×0.70</td></tr>
+  <tr><td>🔹 Оптимизация зондов</td><td>15</td><td>Улучшенные зонды</td><td>—</td><td>Кулдаун зондов ×0.85</td></tr>
+  <tr><td>🔹 Ускоренная калибровка</td><td>25</td><td>Оптимизация зондов</td><td>—</td><td>Кулдаун зондов ×0.70</td></tr>
+  <tr><td>Закалка зондов</td><td>20</td><td>Улучшенные зонды</td><td>—</td><td>Штраф MEDIUM для базового ×0.5→×0.7</td></tr>
+  <tr><td>Усиленный корпус</td><td>25</td><td>Закалка зондов</td><td>—</td><td>Штраф HARD для базового ×0.2→×0.4</td></tr>
+  <tr><td>Адаптивные сенсоры</td><td>30</td><td>Продвинутые зонды</td><td>—</td><td>Штраф HARD для продвинутого ×0.5→×0.7</td></tr>
+  <tr><td>Быстрая подготовка</td><td>20</td><td>Улучшенные зонды</td><td>—</td><td>Кулдаун зондов ×0.8</td></tr>
+  <tr><td>Оптимизация портала</td><td>25</td><td>Быстрая подготовка</td><td>—</td><td>Кулдаун EASY/MEDIUM ×0.8</td></tr>
+  <tr><td>Глубокая калибровка</td><td>30</td><td>Оптимизация портала</td><td>—</td><td>Кулдаун HARD ×0.75</td></tr>
+  <tr><td>Улучшенный анализатор</td><td>35</td><td>Продвинутые зонды</td><td>—</td><td>Продвинутый зонд: данные ×1.5→×2.0</td></tr>
+  <tr><td>Бронирование робота</td><td>25</td><td>Робототехника</td><td>—</td><td>Робот: survival_min 0.1→0.25</td></tr>
+  <tr><td>Увеличенный грузовой отсек</td><td>30</td><td>Бронирование робота</td><td>—</td><td>Робот: гарантия ресурсов 1→2</td></tr>
+  <tr><td>Расширенный сканер редкости</td><td>40</td><td>Увеличенный грузовой отсек</td><td>—</td><td>Робот: max_rarity 3(Epic)→4(Legendary)</td></tr>
 </table>
 
 <h3>DIMENSIONS (Измерения)</h3>
@@ -527,6 +539,102 @@
   <tr><td>Прорыв</td><td>Исследования</td><td>100 RP</td><td>—</td></tr>
 </table>
 
+<!-- ==================== COMBAT ==================== -->
+<h2 id="combat">⚔️ Боевая система</h2>
+
+<h3>Враги</h3>
+<table>
+  <tr><th>Параметр</th><th>Описание</th></tr>
+  <tr><td>Сцена</td><td><code>scenes/enemies/enemy_node.tscn</code> — CharacterBody2D</td></tr>
+  <tr><td>Данные</td><td><code>resources/enemies/*.tres</code> (EnemyData: hp, speed, attack_range, attack_cooldown, drops, color, name)</td></tr>
+  <tr><td>Коллизия</td><td>CircleShape2D (r=6), слой 3 — для обнаружения DamageArea и турелями</td></tr>
+  <tr><td>Группа</td><td><code>enemies</code></td></tr>
+  <tr><td>Таргетинг</td><td>Автоматически ищет ближайшего сотрудника или здание</td></tr>
+  <tr><td>Атака</td><td>Напрямую вызывает <code>take_damage()</code> на цели (не через CombatSystem)</td></tr>
+</table>
+
+<h3>Разделение (Separation)</h3>
+<div class="card">
+  <h4>Враги и сотрудники не стакаются на одной точке</h4>
+  <p>Юниты в зоне атаки не стоят на месте — они отталкиваются друг от друга:</p>
+  <table>
+    <tr><th>Параметр</th><th>Враги</th><th>Сотрудники</th></tr>
+    <tr><td>Радиус разделения</td><td>14 px</td><td>14 px</td></tr>
+    <tr><td>Сила отталкивания</td><td>0.6</td><td>0.4</td></tr>
+  </table>
+  <ul style="margin:4px 0 4px 20px">
+    <li>В зоне атаки: <code>velocity = separation_force</code> (вместо Vector2.ZERO)</li>
+    <li>При движении к цели: <code>velocity = direction × speed + separation_force</code></li>
+  </ul>
+</div>
+
+<h3>Сотрудники в бою</h3>
+<table>
+  <tr><th>Действие</th><th>Описание</th></tr>
+  <tr><td><code>start_attack(enemy)</code></td><td>Устанавливает цель, статус → WORKING</td></tr>
+  <tr><td><code>_process_attack(delta)</code></td><td>Движение к врагу + атака в радиусе</td></tr>
+  <tr><td><code>_perform_attack()</code></td><td>CombatSystem.attack() → DamageArea</td></tr>
+  <tr><td><code>is_attacking()</code></td><td>Проверка: есть ли валидная цель</td></tr>
+  <tr><td><code>stop_attack()</code></td><td>Сброс цели</td></tr>
+</table>
+
+<h3>DamageArea</h3>
+<div class="card">
+  <h4>Динамическая область урона</h4>
+  <p>Создаётся CombatSystem в позиции цели. Проверяет группу цели (<code>enemies</code> или <code>staff</code>).</p>
+  <table>
+    <tr><th>Параметр</th><th>Значение</th></tr>
+    <tr><td>Радиус (обычная)</td><td>16 px</td></tr>
+    <tr><td>Радиус (splash)</td><td>24 px</td></tr>
+    <tr><td>Время жизни</td><td>0.3 сек</td></tr>
+    <tr><td>Обнаружение</td><td><code>body_entered</code> + отложенная проверка <code>get_overlapping_bodies()</code></td></tr>
+  </table>
+  <div class="note" style="border-left-color:var(--orange)">Цель должна иметь <strong>CollisionShape2D</strong> и быть в правильной группе, иначе DamageArea её не обнаружит.</div>
+</div>
+
+<h3>Оружие</h3>
+<table>
+  <tr><th>Оружие</th><th>Урон</th><th>Радиус</th><th>Кулдаун</th><th>Тип</th></tr>
+  <tr><td>Палка-зонд (по умолчанию)</td><td>1.0</td><td>16 px</td><td>1.5 с</td><td>Melee</td></tr>
+  <tr><td>Дубина</td><td>3.0</td><td>20 px</td><td>1.2 с</td><td>Melee</td></tr>
+  <tr><td>Пистолет</td><td>5.0</td><td>64 px</td><td>1.0 с</td><td>Ranged</td></tr>
+  <tr><td>Винтовка</td><td>8.0</td><td>80 px</td><td>1.5 с</td><td>Ranged</td></tr>
+  <tr><td>Дробовик</td><td>12.0</td><td>32 px</td><td>2.0 с</td><td>Ranged (splash 24px)</td></tr>
+</table>
+
+<h3>Автоназначение защиты</h3>
+<div class="card">
+  <h4>InvasionManager._assign_defense()</h4>
+  <p>IDLE-сотрудники автоматически назначаются на ближайших врагов:</p>
+  <ul style="margin:4px 0 4px 20px">
+    <li>При спавне вторжения</li>
+    <li>При найме нового сотрудника (событие <code>staff_hired</code>)</li>
+    <li>Каждые 2 секунды, если есть активные враги</li>
+    <li>Уже атакующие (WORKING) не переназначаются</li>
+  </ul>
+</div>
+
+<h3>Здания — оборона</h3>
+<table>
+  <tr><th>Тип</th><th>Группа</th><th>Поведение</th></tr>
+  <tr><td>Заграждение</td><td><code>fences</code></td><td>Замедляет врагов, разрушается</td></tr>
+  <tr><td>Электрозабор</td><td><code>fences</code> + <code>electric_fences</code></td><td>Замедляет + наносит 5 DPS врагам</td></tr>
+  <tr><td>Турель (ground/air/universal)</td><td><code>turrets</code></td><td>Автоатака: ground=5, air=3, universal=8 урона</td></tr>
+</table>
+<div class="note">Здания при разрушении эмитят <code>building_destroyed</code> → BuildingsManager.remove_building() снимает с навигационной сетки и удаляет.</div>
+
+<h3>Вторжения (InvasionManager)</h3>
+<div class="card">
+  <h4>Механика вторжений</h4>
+  <ul style="margin:4px 0 4px 20px">
+    <li>Враги спавнятся из порталов группами</li>
+    <li>Интервал: 300с → уменьшается на 30с за вторжение (мин. 60с)</li>
+    <li>Больше порталов = чаще вторжения</li>
+    <li>Враги атакуют сотрудников и здания</li>
+    <li>После смерти враг дропает ресурсы (drops) и тушку (carcass)</li>
+  </ul>
+</div>
+
 <!-- ==================== DATA FLOW ==================== -->
 <h2 id="data-flow">🔄 Потоки данных</h2>
 
@@ -600,10 +708,20 @@
   <tr><td>DebugLogger</td><td>—</td><td>Отладочное логирование</td></tr>
   <tr><td>EventLog</td><td>event_log</td><td>Журнал событий с коллбэками</td></tr>
   <tr><td>JournalManager</td><td>—</td><td>Фрагменты знаний</td></tr>
+  <tr><td>TaskManager</td><td>—</td><td>Система задач (перемещение, атака)</td></tr>
+  <tr><td>StaffManager</td><td>—</td><td>Найм и управление сотрудниками</td></tr>
+  <tr><td>BuildingsManager</td><td>—</td><td>Размещение и удаление зданий</td></tr>
+</table>
+
+<h3>Системы (не autoload, через группы)</h3>
+<table>
+  <tr><th>Система</th><th>Группа</th><th>Ответственность</th></tr>
+  <tr><td>CombatSystem</td><td><code>combat_system</code></td><td>Атаки сотрудников, создание DamageArea</td></tr>
+  <tr><td>InvasionManager</td><td><code>invasion_manager</code></td><td>Волны врагов, автоназначение защиты</td></tr>
 </table>
 
 <footer style="margin-top:40px; padding-top:16px; border-top:1px solid var(--border); color:var(--text-dim); font-size:0.85rem;">
-  Dimension Research Wiki — обновлено 2026-06-02 | Движок: Godot 4.6 | GDScript 2.0
+  Dimension Research Wiki — обновлено 2026-06-13 | Движок: Godot 4.6 | GDScript 2.0
 </footer>
 
 </div>
