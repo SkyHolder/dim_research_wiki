@@ -65,6 +65,7 @@
 
 <h1>Dimension Research <small>v0.3</small></h1>
 <p class="subtitle">Top-down пиксельная игра об учёном, исследующем порталы в другие измерения.<br>Вдохновлена Rimworld, Stargate, Solo Leveling.</p>
+<div class="note" style="border-left-color:var(--gold)"><strong>Последнее обновление:</strong> Архитектурный рефакторинг — фабрики, базовые UI-компоненты, Command Pattern, State Machines, SaveMigrator, типизация, EventBus event registry (2026-08-21).</div>
 
 <div class="toc">
   <h3>📑 Содержание</h3>
@@ -83,6 +84,7 @@
     <li><a href="#quests">Задания</a></li>
     <li><a href="#combat">Боевая система</a></li>
     <li><a href="#data-flow">Потоки данных</a></li>
+    <li><a href="#arch-changes">Архитектурные изменения (2026-08-21)</a></li>
   </ul>
 </div>
 
@@ -488,6 +490,37 @@
   <tr><td>🛠</td><td>Debug-меню (F12)</td></tr>
 </table>
 
+<h3 id="main-menu">Главное меню</h3>
+<p>Стартовая сцена <code>scenes/menu/main_menu.tscn</code> (v0.3.1). Тёмный экран (BG_DARK), по центру заголовок и кнопки UI Kit (BaseButton, LARGE_BUTTON_HEIGHT):</p>
+<table>
+  <tr><th>Кнопка</th><th>Действие</th></tr>
+  <tr><td>Продолжить</td><td>Загружает последнее сохранение <code>user://saves/autosave.sav</code> (disabled, если сохранений нет). Режим CONTINUE передаётся через <code>GameState.pending_start_mode</code>; main.gd откладывает reset и выполняет LoadGameCommand после регистрации save-провайдеров</td></tr>
+  <tr><td>Новая игра</td><td>Режим NEW_GAME — обычный сброс GameState и вход в main.tscn</td></tr>
+  <tr><td>Настройки</td><td>Экран-заглушка (реальные опции — отдельной задачей)</td></tr>
+  <tr><td>Выход</td><td>Закрывает игру</td></tr>
+</table>
+<p>Внизу слева — версия игры (application/config/version), 15px safe-zone. Скрипт: <code>scripts/ui/main_menu.gd</code>.</p>
+
+<h3 id="pause-menu">Меню паузы</h3>
+<p>Игровое меню (v0.3.2), id модалки <code>pause_menu</code>. Открывается кнопкой «Меню» в TopBar или ESC, если нет открытых модалок (ESC-логика в ui_manager.gd). При открытии мир ставится на паузу (<code>get_tree().paused</code>), модал и UIManager работают в PROCESS_MODE_ALWAYS. Пункты:</p>
+<table>
+  <tr><th>Пункт</th><th>Действие</th></tr>
+  <tr><td>Вернуться</td><td>Закрывает меню, снимает паузу</td></tr>
+  <tr><td>Сохранить</td><td>SaveGameCommand → <code>user://saves/autosave.sav</code> (первое использование save-пайплайна)</td></tr>
+  <tr><td>Настройки</td><td>Заблокировано (отдельная задача)</td></tr>
+  <tr><td>Сохранить и выйти из игры</td><td>Сохранение + закрытие игры</td></tr>
+</table>
+<p>Скрипт: <code>ui/modals/pause_menu.gd</code> (наследник ModalBase).</p>
+
+<h3 id="dimension-research">Изучение измерений (двухфазная шкала)</h3>
+<p>Шкала изучения — на ТИП портала (измерение), общая для всех порталов одного типа; per-portal «Данные 17/50» заменена (v0.3.3). Две фазы:</p>
+<table>
+  <tr><th>Фаза</th><th>Объём</th><th>Кто наполняет</th></tr>
+  <tr><td>Базовая</td><td>50% суммарной ёмкости типа (sum max_data порталов)</td><td>Любые зонды (stick/basic/advanced/robot)</td></tr>
+  <tr><td>Продвинутая</td><td>остальные 50%</td><td>Только max_stage ≥ 1 (advanced, robot); базовые зонды — со штрафом ×0.3</td></tr>
+</table>
+<p>Правила: продвинутые зонды тоже сначала заполняют базовую фазу. Портал становится DEPLETED, когда завершено изучение его измерения (обе фазы заполнены). Стадии измерений (ANALYZED/MASTERED) — производные шкалы (ANALYZED = базовая фаза заполнена, MASTERED = всё). SSOT — <code>PortalsManager.dimension_research</code> (DimensionResearchData per dim); сигнал <code>dimension_research_changed</code> в portals-домене; сейв v2 (+ миграция v1→v2: per-portal данные → базовая фаза типа). UI: PortalModal — двухсегментная шкала (DataBarBasic/DataBarAdvanced).</p>
+
 <h3>Модальные окна</h3>
 <table>
   <tr><th>Окно</th><th>Источник</th><th>Содержимое</th></tr>
@@ -549,7 +582,7 @@
   <tr><td>Данные</td><td><code>resources/enemies/*.tres</code> (EnemyData: hp, speed, attack_range, attack_cooldown, drops, color, name)</td></tr>
   <tr><td>Коллизия</td><td>CircleShape2D (r=6), слой 3 — для обнаружения DamageArea и турелями</td></tr>
   <tr><td>Группа</td><td><code>enemies</code></td></tr>
-  <tr><td>Таргетинг</td><td>Автоматически ищет ближайшего сотрудника или здание</td></tr>
+  <tr><td>Таргетинг</td><td>Автоматически ищет ближайшего сотрудника или здание. Ретаргет каждые 0.5с — если новая цель на 20% ближе текущей, переключается</td></tr>
   <tr><td>Атака</td><td>Напрямую вызывает <code>take_damage()</code> на цели (не через CombatSystem)</td></tr>
 </table>
 
@@ -571,9 +604,10 @@
 <h3>Сотрудники в бою</h3>
 <table>
   <tr><th>Действие</th><th>Описание</th></tr>
-  <tr><td><code>start_attack(enemy)</code></td><td>Устанавливает цель, статус → WORKING</td></tr>
-  <tr><td><code>_process_attack(delta)</code></td><td>Движение к врагу + атака в радиусе</td></tr>
-  <tr><td><code>_perform_attack()</code></td><td>CombatSystem.attack() → DamageArea</td></tr>
+  <tr><td><code>start_attack(enemy)</code></td><td>Устанавливает цель, переход в COMBAT</td></tr>
+  <tr><td><code>_process_attack(delta)</code></td><td>Движение к врагу / отход при сближении / атака в радиусе</td></tr>
+  <tr><td><code>_perform_attack()</code></td>>CombatSystem.attack() + спавн снаряда</td></tr>
+  <tr><td><code>_perform_melee_fallback()</code></td><td>Melee-удар прикладом когда враг слишком близко для ranged оружия</td></tr>
   <tr><td><code>is_attacking()</code></td><td>Проверка: есть ли валидная цель</td></tr>
   <tr><td><code>stop_attack()</code></td><td>Сброс цели</td></tr>
 </table>
@@ -594,13 +628,24 @@
 
 <h3>Оружие</h3>
 <table>
-  <tr><th>Оружие</th><th>Урон</th><th>Радиус</th><th>Кулдаун</th><th>Тип</th></tr>
-  <tr><td>Палка-зонд (по умолчанию)</td><td>1.0</td><td>16 px</td><td>1.5 с</td><td>Melee</td></tr>
-  <tr><td>Дубина</td><td>3.0</td><td>20 px</td><td>1.2 с</td><td>Melee</td></tr>
-  <tr><td>Пистолет</td><td>5.0</td><td>64 px</td><td>1.0 с</td><td>Ranged</td></tr>
-  <tr><td>Винтовка</td><td>8.0</td><td>80 px</td><td>1.5 с</td><td>Ranged</td></tr>
-  <tr><td>Дробовик</td><td>12.0</td><td>32 px</td><td>2.0 с</td><td>Ranged (splash 24px)</td></tr>
+  <tr><th>Оружие</th><th>Урон</th><th>Радиус</th><th>Мин. радиус</th><th>Кулдаун</th><th>Тип</th><th>При сближении</th></tr>
+  <tr><td>Палка-зонд (по умолчанию)</td><td>2.0</td><td>20 px (1.25t)</td><td>—</td><td>1.2 с</td><td>Melee</td><td>—</td></tr>
+  <tr><td>Дубина</td><td>3.0</td><td>20 px (1.25t)</td><td>—</td><td>1.2 с</td><td>Melee</td><td>—</td></tr>
+  <tr><td>Пистолет</td><td>5.0</td><td>80 px (5t)</td><td>16 px (1t)</td><td>1.0 с</td><td>Ranged</td><td>Не стреляет вплотную</td></tr>
+  <tr><td>Винтовка</td><td>8.0</td><td>128 px (8t)</td><td>48 px (3t)</td><td>1.5 с</td><td>Ranged</td><td>Melee fallback (урон 3.0)</td></tr>
+  <tr><td>Дробовик</td><td>12.0</td><td>48 px (3t)</td><td>32 px (2t)</td><td>2.0 с</td><td>Ranged (splash 24px)</td><td>Не стреляет вплотную</td></tr>
 </table>
+<div class="card">
+  <h4>Минимальный радиус (min_range)</h4>
+  <p>Стрелковое оружие не может стрелять, если враг ближе <code>min_range</code>:</p>
+  <ul style="margin:4px 0 4px 20px">
+    <li><strong>Винтовка:</strong> при сближении врага на ≤3 тайлов сотрудник отходит назад и бьёт прикладом (melee fallback, урон 3.0 × combat_skill)</li>
+    <li><strong>Пистолет:</strong> не стреляет вплотную (≤1 тайл), отходит на дистанцию выстрела</li>
+    <li><strong>Дробовик:</strong> не стреляет вплотную (≤2 тайла), отходит на дистанцию выстрела</li>
+  </ul>
+  <p>Снаряды сотрудника: <code>staff_projectile.gd</code> — 2×2 px, скорость 600 px/с (быстрее турели — 300 px/с), с trail и muzzle flash.</p>
+  <p><strong>Дробовик:</strong> 5 пуль конусом ~30° с разбросом скорости ±10%.</p>
+</div>
 
 <h3>Автоназначение защиты</h3>
 <div class="card">
@@ -613,6 +658,16 @@
     <li>Уже атакующие (WORKING) не переназначаются</li>
   </ul>
 </div>
+
+<h3>Визуальные эффекты боя</h3>
+<table>
+  <tr><th>Эффект</th><th>Описание</th></tr>
+  <tr><td>Тряска спрайта</td><td>При получении урона — случайный offset ±4px, затухающий за 0.25с (сотрудники) / 0.2с (враги)</td></tr>
+  <tr><td>Красный flash</td><td><code>modulate = Color(1, 0.3, 0.3)</code> на 0.15с при попадании</td></tr>
+  <tr><td>Снаряд сотрудника</td><td><code>staff_projectile.gd</code> — 2×2 px, 600 px/с, trail 1.5px, muzzle flash. Цвет по оружию</td></tr>
+  <tr><td>Снаряд турели</td><td><code>turret_projectile.gd</code> — 4×4 px, 300 px/с, trail 2px, muzzle flash</td></tr>
+  <tr><td>Damage Numbers</td><td>Всплывающие числа урона над целью</td></tr>
+</table>
 
 <h3>Здания — оборона</h3>
 <table>
@@ -720,10 +775,188 @@
   <tr><td>InvasionManager</td><td><code>invasion_manager</code></td><td>Волны врагов, автоназначение защиты</td></tr>
 </table>
 
+<!-- ==================== ARCH CHANGES 2026-08-21 ==================== -->
+<h2 id="arch-changes">🏗 Архитектурные изменения (2026-08-21)</h2>
+
+<p>За один рефакторинг-сессию проведена масштабная реструктуризация кодовой базы: внедрены фабрики, базовые UI-сцены, Command Pattern, State Machines, система миграции сохранений, усилена типизация.</p>
+
+<h3>Новые папки</h3>
+<table>
+  <tr><th>Папка</th><th>Содержимое</th><th>Назначение</th></tr>
+  <tr><td><code>scripts/factories/</code></td><td>PortalFactory, EnemyFactory, StaffFactory, BuildingFactory, NPCFactory, ItemFactory</td><td>Централизованное создание объектов с валидацией и инициализацией</td></tr>
+  <tr><td><code>scripts/systems/</code></td><td>MarketSystem, QuestService, CombatService, PortalActions</td><td>Выделенная бизнес-логика, не привязанная к autoload'ам</td></tr>
+  <tr><td><code>scripts/commands/</code></td><td>Command (base), SendProbeCommand, StabilizePortalCommand, ClosePortalCommand, MovePortalCommand, BaitPortalCommand, ConvertVoidStorageCommand, HireStaffCommand, BuildStructureCommand</td><td>Command Pattern для всех действий игрока</td></tr>
+  <tr><td><code>ui/components/</code></td><td>BaseButton, BasePanel, BaseModal, BaseTooltip, BaseWindow, BaseListItem, BaseInventorySlot</td><td>Базовые UI-сцены для наследования вместо дублирования стилей</td></tr>
+  <tr><td><code>scripts/enemies/states/</code></td><td>4 состояния EnemyNode</td><td>State Machine для поведения врагов</td></tr>
+  <tr><td><code>scripts/buildings/states/</code></td><td>4 состояния BuildingNode</td><td>State Machine для зданий</td></tr>
+</table>
+
+<h3>Helper-функции палитры и UI Size Tokens</h3>
+<div class="card">
+  <h4>palette.gd — новые константы и функции</h4>
+  <p>В <code>palette.gd</code> добавлены <strong>UI Size Tokens</strong> — именованные константы для размеров UI-элементов:</p>
+  <table>
+    <tr><th>Токен</th><th>Назначение</th></tr>
+    <tr><td><code>SMALL_BUTTON_HEIGHT</code></td><td>Высота малой кнопки</td></tr>
+    <tr><td><code>BUTTON_HEIGHT</code></td><td>Высота стандартной кнопки</td></tr>
+    <tr><td><code>LARGE_BUTTON_HEIGHT</code></td><td>Высота крупной кнопки</td></tr>
+    <tr><td><code>PANEL_PADDING</code></td><td>Отступ внутри панелей</td></tr>
+    <tr><td><code>WINDOW_PADDING</code></td><td>Отступ внутри окон</td></tr>
+    <tr><td><code>ICON_SMALL / ICON_MEDIUM / ICON_LARGE</code></td><td>Размеры иконок</td></tr>
+  </table>
+  <p><strong>Style helpers</strong> — функции для создания StyleBox:</p>
+  <ul style="margin:4px 0 4px 20px">
+    <li><code>make_panel_style()</code> — создаёт StyleBoxFlat для панелей с нужными отступами, border-radius, цветами</li>
+    <li><code>make_button_style()</code> — создаёт StyleBoxFlat для кнопок (normal/hover/pressed)</li>
+  </ul>
+  <div class="note">Раньше стили задавались инлайн в каждой сцене. Теперь — через единые helper'ы и токены, что убирает дублирование и обеспечивает консистентность.</div>
+</div>
+
+<h3>SaveMigrator и build_version</h3>
+<div class="card">
+  <h4>Версионирование сохранений</h4>
+  <p>Добавлен <code>SaveMigrator</code> — система миграции сохранений на основе версий:</p>
+  <ul style="margin:4px 0 4px 20px">
+    <li>Каждое сохранение содержит <code>build_version</code> — версию формата</li>
+    <li>При загрузке <code>SaveMigrator</code> определяет версию и применяет миграции последовательно</li>
+    <li>Миграции — это функции, преобразующие старый формат данных в новый</li>
+    <li>Позволяет не обесценивать старые сохранения при изменении структуры данных</li>
+  </ul>
+</div>
+
+<h3>Command Pattern</h3>
+<div class="card">
+  <h4>Паттерн «Команда» для действий игрока</h4>
+  <p>Все действия игрока теперь реализованы как <code>Command</code> объекты. Базовый класс <code>Command</code> определяет интерфейс, конкретные команды реализуют логику.</p>
+  <table>
+    <tr><th>Команда</th><th>Действие</th></tr>
+    <tr><td><code>SendProbeCommand</code></td><td>Отправка зонда в портал</td></tr>
+    <tr><td><code>StabilizePortalCommand</code></td><td>Стабилизация нестабильного портала</td></tr>
+    <tr><td><code>ClosePortalCommand</code></td><td>Закрытие портала</td></tr>
+    <tr><td><code>MovePortalCommand</code></td><td>Перемещение портала</td></tr>
+    <tr><td><code>BaitPortalCommand</code></td><td>Установка приманки для контроля вторжений</td></tr>
+    <tr><td><code>ConvertVoidStorageCommand</code></td><td>Конвертация VOID-портала в хранилище</td></tr>
+    <tr><td><code>HireStaffCommand</code></td><td>Найм сотрудника</td></tr>
+    <tr><td><code>BuildStructureCommand</code></td><td>Строительство здания</td></tr>
+  </table>
+  <p><strong>Пример использования:</strong></p>
+  <div class="note" style="font-family:monospace; font-size:0.85rem">
+    <pre>var cmd := SendProbeCommand.new(portal, probe_type)
+if cmd.can_execute():
+    cmd.execute()</pre>
+  </div>
+  <div class="note">Преимущества: валидация до выполнения (<code>can_execute()</code>), отмена/повтор (потенциально), логирование, декопуляция UI от бизнес-логики.</div>
+</div>
+
+<h3>EventBus — Event Registry</h3>
+<div class="card">
+  <h4>Константы событий по доменам</h4>
+  <p>В <code>EventBus</code> добавлены именованные константы для всех событий, сгруппированные по доменам:</p>
+  <ul style="margin:4px 0 4px 20px">
+    <li><strong>Portal:</strong> <code>PORTAL_SPAWNED</code>, <code>PORTAL_BECAME_UNSTABLE</code>, <code>PORTAL_STABILIZED</code>, <code>PORTAL_CLOSED</code>, <code>PORTAL_MOVED</code></li>
+    <li><strong>Staff:</strong> <code>STAFF_HIRED</code>, <code>STAFF_DIED</code>, <code>STAFF_HEALTH_CHANGED</code></li>
+    <li><strong>Building:</strong> <code>BUILDING_PLACED</code>, <code>BUILDING_DESTROYED</code></li>
+    <li><strong>Combat:</strong> <code>COMBAT_DAMAGE_DEALT</code>, <code>ENEMY_KILLED</code></li>
+    <li><strong>Economy:</strong> <code>CREDITS_CHANGED</code>, <code>RP_CHANGED</code>, <code>ITEM_BOUGHT</code>, <code>ITEM_SOLD</code></li>
+    <li><strong>Research:</strong> <code>RESEARCH_COMPLETED</code>, <code>RESEARCH_NODE_UNLOCKED</code></li>
+    <li><strong>UI:</strong> <code>SHOW_NOTIFICATION</code>, <code>SHOW_MODAL</code></li>
+  </ul>
+  <div class="note">Раньше строки событий были разбросаны по коду как строковые литералы. Теперь — единый реестр констант, что исключает опечатки и упрощает поиск.</div>
+</div>
+
+<h3>State Machines</h3>
+<div class="card">
+  <h4>EnemyNode — 4 состояния</h4>
+  <table>
+    <tr><th>Состояние</th><th>Поведение</th></tr>
+    <tr><td>IDLE</td><td>Ожидание, поиск цели</td></tr>
+    <tr><td>CHASING</td><td>Преследование ближайшей цели</td></tr>
+    <tr><td>ATTACKING</td><td>Атака в радиусе</td></tr>
+    <tr><td>DEAD</td><td>Смерть, дроп лута</td></tr>
+  </table>
+  <h4>BuildingNode — 4 состояния</h4>
+  <table>
+    <tr><th>Состояние</th><th>Поведение</th></tr>
+    <tr><td>IDLE</td><td>Здание простаивает</td></tr>
+    <tr><td>ACTIVE</td><td>Здание выполняет функцию</td></tr>
+    <tr><td>DAMAGED</td><td>Здание повреждено</td></tr>
+    <tr><td>DESTROYED</td><td>Здание разрушено</td></tr>
+  </table>
+</div>
+
+<h3>Data Integrity и типизация</h3>
+<div class="card">
+  <h4>Защита данных</h4>
+  <ul style="margin:4px 0 4px 20px">
+    <li><code>collect_data()</code>, <code>increment_probes()</code>, <code>set_credits()</code>, <code>set_research()</code> — методы с валидацией вместо прямого доступа к полям</li>
+    <li>~171 <code>var</code> типизировано</li>
+    <li>5 сигналов получили типизированные аргументы</li>
+    <li>~25 массивов получили типизированные элементы (<code>Array[ItemData]</code> вместо <code>Array</code>)</li>
+  </ul>
+</div>
+
+<h3>Убрано дублирование</h3>
+<div class="card">
+  <h4>Очистка</h4>
+  <ul style="margin:4px 0 4px 20px">
+    <li><code>enum TaskStatus</code> удалён (использовался в одном месте, заменён на прямые проверки)</li>
+    <li><code>enum State</code> в <code>portal_node</code> преобразован в property (state как string)</li>
+  </ul>
+</div>
+
 <footer style="margin-top:40px; padding-top:16px; border-top:1px solid var(--border); color:var(--text-dim); font-size:0.85rem;">
-  Dimension Research Wiki — обновлено 2026-06-13 | Движок: Godot 4.6 | GDScript 2.0
+  Dimension Research Wiki — обновлено 2026-08-21 | Движок: Godot 4.6 | GDScript 2.0
 </footer>
 
 </div>
+
+<section class="doc" style="margin:2em 0">
+<h2>🎨 Спрайты солдата из Mixamo (2026-09-24)</h2>
+<p>Спрайты <code>staff_guard</code> (специализация GUARD) сгенерированы из 3D-модели Ch15 + анимации Walking-solder с Mixamo: 8 направлений × 8 кадров ходьбы + idle-поза, папки <code>assets/sprites/characters/staff_guard/walking/</code> и <code>idle/</code>.</p>
+<ul>
+<li>Пайплайн: Mixamo FBX (скин + скелет, 24 кадра) → Blender 5.2 EEVEE, ортокамера 2:1 (35.264°), 8 азимутов (зеркальная раскладка: left=+90, right=−90), прозрачный фон.</li>
+<li>Постобработка PIL: кроп по alpha, высота контента 47px, canvas 68×68, anchor ног y=59, жёсткая альфа.</li>
+<li><code>staff_view.gd</code>: GUARD добавлен в кастомные персонажи (walking/idle подпапки), researcher/generalist не затронуты.</li>
+</ul>
+<section class="doc" style="margin:2em 0">
+<h2>🎨 Спрайты универсального сотрудника из Mixamo (2026-09-24)</h2>
+<p>Спрайты <code>staff_generalist</code> сгенерированы из 3D-модели Hazmat Suit + анимации Walking с Mixamo: 8 направлений × 8 кадров ходьбы + idle-поза, папки <code>assets/sprites/characters/staff_generalist/walking/</code> и <code>idle/</code>.</p>
+<ul>
+<li>Пайплайн: Mixamo FBX (скин + скелет mixamorig1, 25 кадров) → Blender 5.2 EEVEE, ортокамера 2:1 (35.264°), 8 азимутов, прозрачный фон.</li>
+<li>Постобработка PIL: кроп по alpha, высота контента 47px, canvas 68×68, anchor ног y=59, жёсткая альфа.</li>
+<li><code>staff_view.gd</code> обобщён: кастомные персонажи (researcher, generalist) берут кадры из подпапок <code>&lt;prefix&gt;/walking|idle</code>; базовые <code>char_*</code> без изменений.</li>
+</ul>
+<section class="doc" style="margin:2em 0">
+<h2>🎨 Спрайты исследователя (2026-09-24)</h2>
+<p>Спрайты <code>staff_researcher_*_0..5.png</code> (8 направлений × 6 кадров walk-цикла) заменены рендером 3D-модели Hazmat Suit (учёный в химзащите) из Blender 5.2.</p>
+<ul>
+<li>Источник: FBX с арматурой (67 костей), walk-цикл создан программно (24 кадра).</li>
+<li>Изометрическая ортокамера 2:1, EEVEE, прозрачный фон, свет сверху-слева.</li>
+<li>Формат: 68×68, anchor ног на y=59, жёсткая альфа (0/255), контент-высота 47px.</li>
+<li>Модель в Godot не импортируется — только спрайты. Прежние спрайты: <code>raw-assets/sprites/characters_backup_2026-09-24/</code>.</li>
+</ul>
+<section>
+<h2>🛠 Dev-инфраструктура: тестовая сцена (2026-09-24)</h2>
+<p>Добавлена изолированная dev-сцена <code>scenes/dev/test_showcase.tscn</code> для отладки анимаций и визуала. <code>main.tscn</code> не затрагивается; сцена запускается напрямую (F6 или <code>godot res://scenes/dev/test_showcase.tscn</code>).</p>
+<ul>
+<li>Спавнит через фабрики: все типы зданий (включая заборы, ворота и 3 турели), порталы 2 видов (обычный stable и «в процессе исследования» через <code>start_probe</code>), 3 специализации сотрудников, все 9 типов врагов, ресурсы на земле (<code>world_dropped</code>) и в хранилище (<code>storage_service.add_item</code>).</li>
+<li>Персонажи и враги ходят по кругу: debug-компонент <code>scripts/debug/debug_circular_walk.gd</code> двигает владельца по окружности (изометрия через GridSystem), walk-анимация выводится из фактического перемещения — FSM сущностей не затрагивается.</li>
+<li>Турели вращаются по 8 направлениям: debug-компонент <code>scripts/debug/debug_turret_spin.gd</code> вызывает штатный <code>Turret._set_dir()</code>.</li>
+<li>Для турелей в dev-сцене выставляются meta <code>has_energy</code> и <code>enemies_provider</code> (в полной игре их ставят EnergySystem и game_world).</li>
+<li>Враги спавнятся с <code>frozen = true</code> — FSM-тикалы отключены, движение чисто debug-компонентом.</li>
+</ul>
+</section>
+<section class="doc" style="margin:2em 0">
+<h2>🔍 Hi-res спрайты персонажей ×3 (2026-09-30)</h2>
+<p>Кастомные персонажи (staff_researcher, staff_generalist, staff_guard) перерендены в повышенном разрешении по той же схеме, что и здания ×12: большой спрайт + даунскейл в рантайме.</p>
+<ul>
+<li>Рендер Blender 5.2 EEVEE: 512×512 (было 256), ортокамера и ortho_scale без изменений — плотность сэмплов ×2.</li>
+<li>Постобработка PIL (<code>blender_scripts/gen_chars_postprocess_hires.py</code>): QUALITY_SCALE=3 — canvas 204×204, контент-высота 141px, feet_y=177, жёсткая альфа (как у зданий).</li>
+<li><code>staff_view.gd</code>: CUSTOM_SCALE 0.9 → 0.3 — видимый рост ~42px прежний, детализация под зум камеры выше втрое.</li>
+<li>Формулы walk-кадров выведены из frame_end автоматически: 25 → [1,4,8,11,15,19,22,25], 24 → [1,4,7,10,13,16,19,22].</li>
+<li>Тесты: 372 | 0 failures | 6 errors (предсуществующие). Бэкап: <code>assets/sprites/characters_backup_hires_2026-09-30/</code>.</li>
+</ul>
+</section>
+</section>
 </body>
 </html>
